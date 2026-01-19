@@ -1,6 +1,18 @@
--- GoProj Database Schema
--- Cloudflare D1 (SQLite)
+-- GoProj Database Reset
+-- This will drop all existing tables and recreate with the new schema
 
+-- Drop all existing tables
+DROP TABLE IF EXISTS activities;
+DROP TABLE IF EXISTS project_members;
+DROP TABLE IF EXISTS projects;
+DROP TABLE IF EXISTS sessions;
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS comments;
+DROP TABLE IF EXISTS attachments;
+DROP TABLE IF EXISTS issues;
+DROP TABLE IF EXISTS versions;
+
+-- Create new tables
 -- Users 表
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -79,6 +91,19 @@ CREATE TABLE IF NOT EXISTS issues (
     FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
 );
 
+-- Versions 表
+CREATE TABLE IF NOT EXISTS versions (
+    name TEXT PRIMARY KEY,
+    project_id INTEGER NOT NULL,
+    status TEXT NOT NULL DEFAULT 'planned' CHECK(status IN ('planned', 'in_progress', 'released')),
+    description TEXT DEFAULT '',
+    created_by INTEGER NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    released_at DATETIME,
+    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+);
+
 -- Comments 表
 CREATE TABLE IF NOT EXISTS comments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -103,20 +128,7 @@ CREATE TABLE IF NOT EXISTS attachments (
     FOREIGN KEY (issue_id) REFERENCES issues(id) ON DELETE CASCADE
 );
 
--- Versions 表
-CREATE TABLE IF NOT EXISTS versions (
-    name TEXT PRIMARY KEY,
-    project_id INTEGER NOT NULL,
-    status TEXT NOT NULL DEFAULT 'planned' CHECK(status IN ('planned', 'in_progress', 'released')),
-    description TEXT DEFAULT '',
-    created_by INTEGER NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    released_at DATETIME,
-    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
-    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
-);
-
--- 索引
+-- Indexes
 -- Users & Auth
 CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token);
@@ -152,7 +164,7 @@ CREATE INDEX IF NOT EXISTS idx_activities_project_id ON activities(project_id);
 CREATE INDEX IF NOT EXISTS idx_activities_user_id ON activities(user_id);
 CREATE INDEX IF NOT EXISTS idx_activities_created_at ON activities(created_at DESC);
 
--- 触发器：自动更新 updated_at
+-- Triggers
 CREATE TRIGGER IF NOT EXISTS update_projects_timestamp
 AFTER UPDATE ON projects
 BEGIN
