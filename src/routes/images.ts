@@ -34,12 +34,8 @@ app.post('/upload', async (c) => {
     const timestamp = Date.now();
     const key = `images/${timestamp}-${file.name}`;
 
-    console.log(`Uploading image to R2: key=${key}, size=${file.size}, type=${file.type}`);
-
     // Upload to R2
     await c.env.R2.put(key, file);
-
-    console.log(`Successfully uploaded to R2: ${key}`);
 
     // Generate public URL for R2
     // Return full URL for frontend to access
@@ -107,14 +103,10 @@ app.get('/*', async (c) => {
     const path = c.req.path;
     const key = decodeURIComponent(path.replace('/api/images/', ''));
 
-    console.log(`Fetching image with key: ${key}`);
-    console.log(`Request path: ${path}`);
-
     // Get image from R2
     const object = await c.env.R2.get(key);
 
     if (!object) {
-      console.log(`Image not found in R2: ${key}`);
       return c.json({ error: 'Image not found', key }, 404);
     }
 
