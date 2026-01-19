@@ -10,7 +10,7 @@ command = "npm run build"
 [[d1_databases]]
 binding = "DB"
 database_name = "goprog-db"
-database_id = "bc5fb4c9-d2f8-464e-a218-3b365cff3113"
+database_id = "c91c0c64-45f1-40a5-b7a5-f0b97e23f3d7"
 
 # R2 Storage Binding
 [[r2_buckets]]
@@ -19,4 +19,4 @@ bucket_name = "goprog-images"
 
 # Variables for CORS
 [vars]
-ALLOWED_ORIGINS = "http://localhost:5173,http://localhost:5176,https://goprog-frontend.pages.dev,https://*.goprog-frontend.pages.dev"
+ALLOWED_ORIGINS = "http://localhost:5173,http://localhost:5176,https://goproj-frontend.pages.dev,https://*.goproj-frontend.pages.dev"
