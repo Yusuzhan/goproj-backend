@@ -38,9 +38,8 @@ app.post('/upload', async (c) => {
     await c.env.R2.put(key, file);
 
     // Generate public URL for R2
-    // Note: In production, you would configure R2 with a custom domain
-    // For now, we'll create a proxy route
-    const url = `/api/images/${key}`;
+    // Return full URL for frontend to access
+    const url = `https://goproj-backend.yusuzhan.workers.dev/api/images/${key}`;
     const size = file.size;
     const contentType = file.type;
 
