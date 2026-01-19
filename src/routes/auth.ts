@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { AuthService } from '../services/auth.service';
+import { auth } from '../middleware/auth';
 import { Env } from '../types';
 
 const app = new Hono<{ Bindings: Env }>();
