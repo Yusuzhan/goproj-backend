@@ -94,7 +94,7 @@ app.get('/stats', async (c) => {
 });
 
 // Serve uploaded images from R2
-app.get('/images/*', async (c) => {
+app.get('/*', async (c) => {
   const service = new ImageService(c.env);
 
   try {
