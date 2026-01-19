@@ -5,6 +5,7 @@ import versionsRouter from './routes/versions';
 import imagesRouter from './routes/images';
 import authRouter from './routes/auth';
 import projectsRouter from './routes/projects';
+import activitiesRouter from './routes/activities';
 import { Env } from './types';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -49,5 +50,6 @@ app.route('/api/projects', projectsRouter);
 app.route('/api/issues', issuesRouter);
 app.route('/api/versions', versionsRouter);
 app.route('/api/images', imagesRouter);
+app.route('/api/activities', activitiesRouter);
 
 export default app;
