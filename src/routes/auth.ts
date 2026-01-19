@@ -203,4 +203,19 @@ app.post('/debug/test-password', async (c) => {
   }
 });
 
+/**
+ * DEBUG: Delete all users (WARNING: removes all user data)
+ */
+app.post('/debug/clear-users', async (c) => {
+  try {
+    await c.env.DB.prepare('DELETE FROM project_members').run();
+    await c.env.DB.prepare('DELETE FROM projects').run();
+    await c.env.DB.prepare('DELETE FROM sessions').run();
+    await c.env.DB.prepare('DELETE FROM users').run();
+    return c.json({ success: true, message: 'All user data cleared' });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
 export default app;
