@@ -103,11 +103,15 @@ app.get('/*', async (c) => {
     const path = c.req.path;
     const key = path.replace('/api/images/', '');
 
+    console.log(`Fetching image with key: ${key}`);
+    console.log(`Request path: ${path}`);
+
     // Get image from R2
     const object = await c.env.R2.get(key);
 
     if (!object) {
-      return c.text('Image not found', 404);
+      console.log(`Image not found in R2: ${key}`);
+      return c.json({ error: 'Image not found', key }, 404);
     }
 
     // Get metadata to determine content type
