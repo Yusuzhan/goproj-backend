@@ -1,20 +1,30 @@
 import { Hono } from 'hono';
 import { IssueService } from '../services/issue.service';
+import { auth } from '../middleware/auth';
 import { Env } from '../types';
 
 const app = new Hono<{ Bindings: Env }>();
 
 // List issues
-app.get('/', async (c) => {
+app.get('/', auth, async (c) => {
   const service = new IssueService(c.env);
   const type = c.req.query('type');
   const status = c.req.query('status');
   const priority = c.req.query('priority');
   const version = c.req.query('version');
+  const projectId = c.req.query('project_id');
   const limit = parseInt(c.req.query('limit') || '50');
   const offset = parseInt(c.req.query('offset') || '0');
 
-  const issues = await service.list({ type, status, priority, version, limit, offset });
+  const issues = await service.list({
+    project_id: projectId ? parseInt(projectId) : undefined,
+    type,
+    status,
+    priority,
+    version,
+    limit,
+    offset,
+  });
   return c.json(issues);
 });
 
@@ -32,15 +42,23 @@ app.get('/:id', async (c) => {
 });
 
 // Create issue
-app.post('/', async (c) => {
+app.post('/', auth, async (c) => {
+  const user = c.get('user');
   const service = new IssueService(c.env);
   const data = await c.req.json();
 
   try {
-    const issue = await service.create(data);
+    // Add project_id from request body and created_by from authenticated user
+    const issueData = {
+      ...data,
+      project_id: data.project_id,
+      created_by: user.id,
+    };
+
+    const issue = await service.create(issueData);
     return c.json(issue, 201);
-  } catch (error) {
-    return c.json({ error: 'Failed to create issue' }, 500);
+  } catch (error: any) {
+    return c.json({ error: error.message || 'Failed to create issue' }, 500);
   }
 });
 

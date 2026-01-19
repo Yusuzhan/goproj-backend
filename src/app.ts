@@ -4,6 +4,7 @@ import issuesRouter from './routes/issues';
 import versionsRouter from './routes/versions';
 import imagesRouter from './routes/images';
 import authRouter from './routes/auth';
+import projectsRouter from './routes/projects';
 import { Env } from './types';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -44,6 +45,7 @@ app.post('/api/init-db', async (c) => {
 
 // Routes
 app.route('/api/auth', authRouter);
+app.route('/api/projects', projectsRouter);
 app.route('/api/issues', issuesRouter);
 app.route('/api/versions', versionsRouter);
 app.route('/api/images', imagesRouter);

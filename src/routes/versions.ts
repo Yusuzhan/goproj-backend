@@ -1,13 +1,15 @@
 import { Hono } from 'hono';
 import { VersionService } from '../services/version.service';
+import { auth } from '../middleware/auth';
 import { Env } from '../types';
 
 const app = new Hono<{ Bindings: Env }>();
 
 // List all versions
-app.get('/', async (c) => {
+app.get('/', auth, async (c) => {
   const service = new VersionService(c.env);
-  const versions = await service.list();
+  const projectId = c.req.query('project_id');
+  const versions = await service.list(projectId ? parseInt(projectId) : undefined);
   return c.json(versions);
 });
 
@@ -38,19 +40,24 @@ app.get('/:name/stats', async (c) => {
 });
 
 // Create version
-app.post('/', async (c) => {
+app.post('/', auth, async (c) => {
+  const user = c.get('user');
   const service = new VersionService(c.env);
   const data = await c.req.json();
 
-  if (!data.name) {
-    return c.json({ error: 'name is required' }, 400);
+  if (!data.name || !data.project_id) {
+    return c.json({ error: 'name and project_id are required' }, 400);
   }
 
   try {
-    const version = await service.create(data);
+    const versionData = {
+      ...data,
+      created_by: user.id,
+    };
+    const version = await service.create(versionData);
     return c.json(version, 201);
-  } catch (error) {
-    return c.json({ error: 'Failed to create version' }, 500);
+  } catch (error: any) {
+    return c.json({ error: error.message || 'Failed to create version' }, 500);
   }
 });
 

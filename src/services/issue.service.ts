@@ -4,6 +4,7 @@ export class IssueService {
   constructor(private env: Env) {}
 
   async list(filters: {
+    project_id?: number;
     type?: string;
     status?: string;
     priority?: string;
@@ -14,6 +15,10 @@ export class IssueService {
     const conditions: string[] = [];
     const params: any[] = [];
 
+    if (filters.project_id) {
+      conditions.push('project_id = ?');
+      params.push(filters.project_id);
+    }
     if (filters.type) {
       conditions.push('type = ?');
       params.push(filters.type);
@@ -54,17 +59,19 @@ export class IssueService {
 
   async create(data: any) {
     const result = await this.env.DB.prepare(
-      `INSERT INTO issues (type, title, status, priority, version, assignee, description)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO issues (project_id, type, title, status, priority, version, assignee_id, description, created_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
       .bind(
+        data.project_id,
         data.type,
         data.title,
         data.status || 'open',
         data.priority || 'medium',
         data.version || null,
-        data.assignee || null,
-        data.description || ''
+        data.assignee_id || null,
+        data.description || '',
+        data.created_by
       )
       .run();
 
@@ -117,11 +124,11 @@ export class IssueService {
     return results;
   }
 
-  async addComment(issueId: number, author: string, content: string) {
+  async addComment(issueId: number, userId: number, content: string) {
     const result = await this.env.DB.prepare(
-      'INSERT INTO comments (issue_id, author, content) VALUES (?, ?, ?)'
+      'INSERT INTO comments (issue_id, user_id, content) VALUES (?, ?, ?)'
     )
-      .bind(issueId, author, content)
+      .bind(issueId, userId, content)
       .run();
 
     if (!result.success) {

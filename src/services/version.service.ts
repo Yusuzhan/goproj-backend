@@ -3,10 +3,16 @@ import { Env } from '../types';
 export class VersionService {
   constructor(private env: Env) {}
 
-  async list() {
-    const { results } = await this.env.DB.prepare(
-      'SELECT * FROM versions ORDER BY created_at DESC'
-    ).all();
+  async list(project_id?: number) {
+    const query = project_id
+      ? 'SELECT * FROM versions WHERE project_id = ? ORDER BY created_at DESC'
+      : 'SELECT * FROM versions ORDER BY created_at DESC';
+
+    const params = project_id ? [project_id] : [];
+
+    const { results } = await this.env.DB.prepare(query)
+      .bind(...params)
+      .all();
 
     return results;
   }
@@ -22,18 +28,22 @@ export class VersionService {
   }
 
   async create(data: {
+    project_id: number;
     name: string;
     status?: string;
     description?: string;
+    created_by: number;
   }) {
     const result = await this.env.DB.prepare(
-      `INSERT INTO versions (name, status, description)
-       VALUES (?, ?, ?)`
+      `INSERT INTO versions (project_id, name, status, description, created_by)
+       VALUES (?, ?, ?, ?, ?)`
     )
       .bind(
+        data.project_id,
         data.name,
         data.status || 'planned',
-        data.description || ''
+        data.description || '',
+        data.created_by
       )
       .run();
 
