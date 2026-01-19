@@ -9,6 +9,7 @@ export interface Project {
   created_by: number;
   created_at: string;
   updated_at: string;
+  role?: string; // User's role in this project
 }
 
 export interface CreateProjectInput {
@@ -72,7 +73,7 @@ export class ProjectService {
    */
   async getUserProjects(userId: number): Promise<Project[]> {
     const projects = await this.env.DB.prepare(
-      `SELECT DISTINCT p.*
+      `SELECT p.*, pm.role
        FROM projects p
        INNER JOIN project_members pm ON p.id = pm.project_id
        WHERE pm.user_id = ?
