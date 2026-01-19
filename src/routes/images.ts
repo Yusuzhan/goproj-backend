@@ -34,8 +34,12 @@ app.post('/upload', async (c) => {
     const timestamp = Date.now();
     const key = `images/${timestamp}-${file.name}`;
 
+    console.log(`Uploading image to R2: key=${key}, size=${file.size}, type=${file.type}`);
+
     // Upload to R2
     await c.env.R2.put(key, file);
+
+    console.log(`Successfully uploaded to R2: ${key}`);
 
     // Generate public URL for R2
     // Return full URL for frontend to access
