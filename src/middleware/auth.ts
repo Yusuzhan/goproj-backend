@@ -57,3 +57,40 @@ export const optionalAuth: MiddlewareHandler<{ Bindings: Env }> = async (c, next
 
   await next();
 };
+
+/**
+ * Check if user is a member of the project
+ * Project ID must be in route params as :id or :projectId
+ */
+export const requireProjectAccess: MiddlewareHandler<{ Bindings: Env }> = async (c, next) => {
+  const user = c.get('user');
+  if (!user) {
+    return c.json({ error: 'Not authenticated' }, 401);
+  }
+
+  // Try both :id and :projectId params
+  let projectId = c.req.param('id');
+  if (!projectId) {
+    projectId = c.req.param('projectId');
+  }
+
+  if (!projectId) {
+    return c.json({ error: 'Project ID required' }, 400);
+  }
+
+  // Check if user is a member
+  const member = await c.env.DB.prepare(
+    'SELECT role FROM project_members WHERE project_id = ? AND user_id = ?'
+  )
+    .bind(projectId, user.id)
+    .first();
+
+  if (!member) {
+    return c.json({ error: 'Not a member of this project' }, 403);
+  }
+
+  // Store role in context
+  c.set('userRole', member.role);
+
+  await next();
+};

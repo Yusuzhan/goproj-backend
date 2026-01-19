@@ -1,22 +1,21 @@
 import { Hono } from 'hono';
 import { ActivityService } from '../services/activity.service';
-import { auth, requireProjectAccess } from '../middleware/auth';
+import { auth } from '../middleware/auth';
 import { Env } from '../types';
 
 const app = new Hono<{ Bindings: Env }>();
 
 /**
  * GET /api/activities
- * Get recent activities for all user's projects
+ * Get recent activities for all projects
  */
 app.get('/', auth, async (c) => {
-  const user = c.get('user');
   const service = new ActivityService(c.env);
 
   const limit = parseInt(c.req.query('limit') || '20');
 
   try {
-    const activities = await service.getUserActivities(user.id, limit);
+    const activities = await service.getAllActivities(limit);
     return c.json(activities);
   } catch (error: any) {
     return c.json({ error: error.message || 'Failed to get activities' }, 500);
@@ -27,7 +26,7 @@ app.get('/', auth, async (c) => {
  * GET /api/activities/project/:projectId
  * Get activities for a specific project
  */
-app.get('/project/:projectId', auth, requireProjectAccess, async (c) => {
+app.get('/project/:projectId', auth, async (c) => {
   const projectId = parseInt(c.req.param('projectId'));
   const service = new ActivityService(c.env);
 
@@ -50,7 +49,7 @@ app.get('/project/:projectId', auth, requireProjectAccess, async (c) => {
  * GET /api/activities/project/:projectId/stats
  * Get activity statistics for a project
  */
-app.get('/project/:projectId/stats', auth, requireProjectAccess, async (c) => {
+app.get('/project/:projectId/stats', auth, async (c) => {
   const projectId = parseInt(c.req.param('projectId'));
   const service = new ActivityService(c.env);
 
@@ -69,7 +68,6 @@ app.get('/project/:projectId/stats', auth, requireProjectAccess, async (c) => {
 app.get(
   '/project/:projectId/:entityType/:entityId',
   auth,
-  requireProjectAccess,
   async (c) => {
     const projectId = parseInt(c.req.param('projectId'));
     const entityType = c.req.param('entityType');

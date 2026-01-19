@@ -33,13 +33,11 @@ app.get('/debug/all', async (c) => {
 
 /**
  * GET /api/projects
- * Get all projects for authenticated user
+ * Get all projects
  */
 app.get('/', auth, async (c) => {
-  const user = c.get('user');
   const service = new ProjectService(c.env);
-
-  const projects = await service.getUserProjects(user.id);
+  const projects = await service.getAllProjects();
   return c.json(projects);
 });
 
@@ -88,12 +86,11 @@ app.post('/', auth, async (c) => {
  */
 app.put('/:id', auth, async (c) => {
   const projectId = parseInt(c.req.param('id'));
-  const user = c.get('user');
   const service = new ProjectService(c.env);
 
   try {
     const input = await c.req.json();
-    const project = await service.updateProject(projectId, user.id, input);
+    const project = await service.updateProject(projectId, input);
 
     if (!project) {
       return c.json({ error: 'Project not found' }, 404);
@@ -111,104 +108,13 @@ app.put('/:id', auth, async (c) => {
  */
 app.delete('/:id', auth, async (c) => {
   const projectId = parseInt(c.req.param('id'));
-  const user = c.get('user');
   const service = new ProjectService(c.env);
 
   try {
-    await service.deleteProject(projectId, user.id);
+    await service.deleteProject(projectId);
     return c.json({ success: true });
   } catch (error: any) {
     return c.json({ error: error.message || 'Failed to delete project' }, 500);
-  }
-});
-
-/**
- * GET /api/projects/:id/members
- * Get all members of a project
- */
-app.get('/:id/members', auth, async (c) => {
-  const projectId = parseInt(c.req.param('id'));
-  const service = new ProjectService(c.env);
-
-  try {
-    const members = await service.getProjectMembers(projectId);
-    return c.json(members);
-  } catch (error: any) {
-    return c.json({ error: error.message || 'Failed to get members' }, 500);
-  }
-});
-
-/**
- * POST /api/projects/:id/members
- * Add a member to a project
- */
-app.post('/:id/members', auth, async (c) => {
-  const projectId = parseInt(c.req.param('id'));
-  const user = c.get('user');
-  const service = new ProjectService(c.env);
-
-  try {
-    const input = await c.req.json();
-
-    if (!input.user_id || !input.role) {
-      return c.json({ error: 'user_id and role are required' }, 400);
-    }
-
-    const member = await service.addMember(projectId, user.id, input);
-    return c.json(member, 201);
-  } catch (error: any) {
-    const status = error.message.includes('not found') ? 404 :
-                  error.message.includes('already a member') ? 400 : 500;
-    return c.json({ error: error.message || 'Failed to add member' }, status);
-  }
-});
-
-/**
- * PUT /api/projects/:id/members/:userId
- * Update a member's role
- */
-app.put('/:id/members/:userId', auth, async (c) => {
-  const projectId = parseInt(c.req.param('id'));
-  const targetUserId = parseInt(c.req.param('userId'));
-  const user = c.get('user');
-  const service = new ProjectService(c.env);
-
-  try {
-    const { role } = await c.req.json();
-
-    if (!role) {
-      return c.json({ error: 'role is required' }, 400);
-    }
-
-    const member = await service.updateMemberRole(projectId, user.id, targetUserId, role);
-
-    if (!member) {
-      return c.json({ error: 'Member not found' }, 404);
-    }
-
-    return c.json(member);
-  } catch (error: any) {
-    const status = error.message.includes('Only project owners') ? 403 : 500;
-    return c.json({ error: error.message || 'Failed to update member role' }, status);
-  }
-});
-
-/**
- * DELETE /api/projects/:id/members/:userId
- * Remove a member from a project
- */
-app.delete('/:id/members/:userId', auth, async (c) => {
-  const projectId = parseInt(c.req.param('id'));
-  const targetUserId = parseInt(c.req.param('userId'));
-  const user = c.get('user');
-  const service = new ProjectService(c.env);
-
-  try {
-    await service.removeMember(projectId, user.id, targetUserId);
-    return c.json({ success: true });
-  } catch (error: any) {
-    const status = error.message.includes('Only project owners') ? 403 : 500;
-    return c.json({ error: error.message || 'Failed to remove member' }, status);
   }
 });
 

@@ -41,23 +41,19 @@ export class ActivityService {
   }
 
   /**
-   * Get recent activities for all user's projects
+   * Get all recent activities
    */
-  async getUserActivities(userId: number, limit: number = 20): Promise<Activity[]> {
+  async getAllActivities(limit: number = 20): Promise<Activity[]> {
     const activities = await this.env.DB.prepare(
-      `SELECT DISTINCT a.*,
+      `SELECT a.*,
               u.email as user_email,
-              u.name as user_name,
-              p.name as project_name
+              u.name as user_name
        FROM activities a
        JOIN users u ON a.user_id = u.id
-       JOIN projects p ON a.project_id = p.id
-       JOIN project_members pm ON a.project_id = pm.project_id
-       WHERE pm.user_id = ?
        ORDER BY a.created_at DESC
        LIMIT ?`
     )
-      .bind(userId, limit)
+      .bind(limit)
       .all();
 
     return activities.results as Activity[];

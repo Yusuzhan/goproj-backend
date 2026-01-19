@@ -6,7 +6,7 @@ const app = new Hono<{ Bindings: Env }>();
 
 /**
  * POST /api/auth/register
- * Register a new user
+ * Register a new user (requires admin approval)
  */
 app.post('/register', async (c) => {
   try {
@@ -19,13 +19,10 @@ app.post('/register', async (c) => {
     const service = new AuthService(c.env);
     const result = await service.register({ email, name, password });
 
-    // Set token in HTTP-only cookie
-    c.header('Set-Cookie', `token=${result.token}; HttpOnly; Secure; SameSite=Lax; Max-Age=3600; Path=/`);
-
     return c.json({
+      message: 'Registration successful. Please wait for admin approval.',
       user: result.user,
-      token: result.token,
-    });
+    }, 201);
   } catch (error: any) {
     return c.json({ error: error.message || 'Registration failed' }, 400);
   }
@@ -215,6 +212,55 @@ app.post('/debug/clear-users', async (c) => {
     return c.json({ success: true, message: 'All user data cleared' });
   } catch (error: any) {
     return c.json({ error: error.message }, 500);
+  }
+});
+
+/**
+ * GET /api/auth/pending
+ * Get pending users (admin only)
+ */
+app.get('/pending', auth, async (c) => {
+  try {
+    const user = c.get('user');
+    if (!user || user.is_admin !== 1) {
+      return c.json({ error: 'Admin access required' }, 403);
+    }
+
+    const service = new AuthService(c.env);
+    const pendingUsers = await service.getPendingUsers();
+
+    return c.json({ users: pendingUsers });
+  } catch (error: any) {
+    return c.json({ error: error.message || 'Failed to get pending users' }, 500);
+  }
+});
+
+/**
+ * POST /api/auth/approve/:userId
+ * Approve a pending user (admin only)
+ */
+app.post('/approve/:userId', auth, async (c) => {
+  try {
+    const user = c.get('user');
+    if (!user || user.is_admin !== 1) {
+      return c.json({ error: 'Admin access required' }, 403);
+    }
+
+    const userId = parseInt(c.req.param('userId'));
+    if (isNaN(userId)) {
+      return c.json({ error: 'Invalid user ID' }, 400);
+    }
+
+    const service = new AuthService(c.env);
+    const success = await service.approveUser(userId);
+
+    if (!success) {
+      return c.json({ error: 'User not found' }, 404);
+    }
+
+    return c.json({ success: true, message: 'User approved successfully' });
+  } catch (error: any) {
+    return c.json({ error: error.message || 'Failed to approve user' }, 500);
   }
 });
 

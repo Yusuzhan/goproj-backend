@@ -7,6 +7,8 @@ CREATE TABLE IF NOT EXISTS users (
     email TEXT NOT NULL UNIQUE,
     name TEXT NOT NULL,
     password_hash TEXT NOT NULL,
+    is_admin INTEGER NOT NULL DEFAULT 0 CHECK(is_admin IN (0, 1)),
+    status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'approved')),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -30,20 +32,7 @@ CREATE TABLE IF NOT EXISTS projects (
     color TEXT DEFAULT '#1976D2',
     created_by INTEGER NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
-);
-
--- Project Members 表
-CREATE TABLE IF NOT EXISTS project_members (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    project_id INTEGER NOT NULL,
-    user_id INTEGER NOT NULL,
-    role TEXT NOT NULL DEFAULT 'member' CHECK(role IN ('owner', 'admin', 'member', 'viewer')),
-    joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(project_id, user_id),
-    FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Activities 表
@@ -122,10 +111,6 @@ CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token);
 CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
 
--- Projects
-CREATE INDEX IF NOT EXISTS idx_project_members_project_id ON project_members(project_id);
-CREATE INDEX IF NOT EXISTS idx_project_members_user_id ON project_members(user_id);
-
 -- Issues
 CREATE INDEX IF NOT EXISTS idx_issues_type ON issues(type);
 CREATE INDEX IF NOT EXISTS idx_issues_status ON issues(status);
@@ -170,3 +155,10 @@ AFTER UPDATE ON issues
 BEGIN
     UPDATE issues SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
+
+-- 初始化默认管理员账号
+-- 邮箱: yusuzhan@msn.com
+-- 密码: 1qaz2wsx (bcrypt hash)
+INSERT OR IGNORE INTO users (email, name, password_hash, is_admin, status)
+VALUES ('yusuzhan@msn.com', 'yusuzhan', '/+pGaUEMuR0lpEGSLVgjunEwzz5/LSfbYSS0KUGEbsYgwSubWY4PB/0eYH3xv+O6', 1, 'approved');
+
