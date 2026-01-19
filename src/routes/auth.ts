@@ -43,7 +43,19 @@ app.post('/login', async (c) => {
       return c.json({ error: 'Email and password are required' }, 400);
     }
 
+    // Debug: Check if user exists
     const service = new AuthService(c.env);
+    const userCheck = await c.env.DB.prepare(
+      'SELECT id, email, name FROM users WHERE email = ?'
+    ).bind(email).first();
+
+    if (!userCheck) {
+      console.log('User not found:', email);
+      return c.json({ error: 'User not found' }, 404);
+    }
+
+    console.log('User found:', userCheck);
+
     const result = await service.login({ email, password });
 
     // Set token in HTTP-only cookie
@@ -54,6 +66,7 @@ app.post('/login', async (c) => {
       token: result.token,
     });
   } catch (error: any) {
+    console.log('Login error:', error.message);
     return c.json({ error: error.message || 'Login failed' }, 401);
   }
 });
@@ -144,6 +157,49 @@ app.post('/refresh', async (c) => {
     return c.json({ token: newToken });
   } catch (error: any) {
     return c.json({ error: error.message || 'Failed to refresh token' }, 500);
+  }
+});
+
+/**
+ * DEBUG: List all users (remove in production)
+ */
+app.get('/debug/users', async (c) => {
+  try {
+    const users = await c.env.DB.prepare('SELECT id, email, name FROM users').all();
+    return c.json({ count: users.results.length, users: users.results });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+/**
+ * DEBUG: Test password verification (remove in production)
+ */
+app.post('/debug/test-password', async (c) => {
+  try {
+    const { email, password } = await c.req.json();
+
+    // Get user with password hash
+    const user = await c.env.DB.prepare(
+      'SELECT id, email, name, password_hash FROM users WHERE email = ?'
+    ).bind(email).first();
+
+    if (!user) {
+      return c.json({ error: 'User not found' }, 404);
+    }
+
+    // Test password verification
+    const { verifyPassword } = await import('../utils/password');
+    const isValid = await verifyPassword(password, user.password_hash as string);
+
+    return c.json({
+      email: user.email,
+      hashLength: user.password_hash?.length,
+      passwordLength: password.length,
+      isValid,
+    });
+  } catch (error: any) {
+    return c.json({ error: error.message, stack: error.stack }, 500);
   }
 });
 
