@@ -6,6 +6,32 @@ import { Env } from '../types';
 const app = new Hono<{ Bindings: Env }>();
 
 /**
+ * DEBUG: List all projects with members
+ */
+app.get('/debug/all', async (c) => {
+  try {
+    const projects = await c.env.DB.prepare(
+      `SELECT p.*,
+        (SELECT COUNT(*) FROM project_members WHERE project_id = p.id) as member_count
+       FROM projects p`
+    ).all();
+
+    const members = await c.env.DB.prepare(
+      `SELECT pm.*, u.email, u.name
+       FROM project_members pm
+       JOIN users u ON pm.user_id = u.id`
+    ).all();
+
+    return c.json({
+      projects: projects.results,
+      members: members.results,
+    });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+/**
  * GET /api/projects
  * Get all projects for authenticated user
  */
