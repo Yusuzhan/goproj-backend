@@ -1,0 +1,28 @@
+{
+  "name": "goprog-backend",
+  "version": "1.0.0",
+  "description": "GoProj Backend - Cloudflare Workers + Hono",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "esbuild src/index.ts --bundle --format=esm --outfile=dist/index.js",
+    "dev": "wrangler dev",
+    "deploy": "npm run build && wrangler deploy",
+    "d1:create": "wrangler d1 create goprog-db",
+    "d1:execute": "wrangler d1 execute goprog-db --file=src/db/schema.sql",
+    "d1:migrate:local": "wrangler d1 execute goprog-db --local --file=src/db/schema.sql"
+  },
+  "keywords": [
+    "cloudflare",
+    "workers",
+    "hono"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20231218.0",
+    "wrangler": "^3.20.0"
+  },
+  "dependencies": {
+    "hono": "^3.12.12"
+  }
+}
