@@ -105,7 +105,7 @@ app.get('/*', async (c) => {
     // Extract the key from the URL path
     // URL format: /api/images/{key}
     const path = c.req.path;
-    const key = path.replace('/api/images/', '');
+    const key = decodeURIComponent(path.replace('/api/images/', ''));
 
     console.log(`Fetching image with key: ${key}`);
     console.log(`Request path: ${path}`);
